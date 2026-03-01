@@ -1,7 +1,7 @@
 [project]
 name = "projeto-5"
 version = "0.1.0"
-description = "Add your description here"
+description = "API e Front-end para predição de risco de alunos da Passos Mágicos"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,17 +16,18 @@ dependencies = [
 [dependency-groups]
 dev = [
     "taskipy>=1.14.1",
+    "pytest>=8.0.0",
 ]
 
 [tool.taskipy.tasks]
-start = "python app.py"
 lint = "ruff check ."
 test = "pytest"
 api = "uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
 front = "streamlit run frontend/app.py --server.port 8501"
+start-services = "start /b uv run task api & uv run task front"
 docker-build = "docker build -t passos-magicos-api ."
 docker-run = "docker run -p 8000:8000 passos-magicos-api"
-docker-test = "task docker-build && task docker-run"
+docker-test = "uv run task docker-build && uv run task docker-run"
 
 [build-system]
 requires = ["setuptools", "wheel"]
