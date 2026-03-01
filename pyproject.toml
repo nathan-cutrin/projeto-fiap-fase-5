@@ -24,6 +24,9 @@ lint = "ruff check ."
 test = "pytest"
 api = "uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
 front = "streamlit run frontend/app.py --server.port 8501"
+docker-build = "docker build -t passos-magicos-api ."
+docker-run = "docker run -p 8000:8000 passos-magicos-api"
+docker-test = "task docker-build && task docker-run"
 
 [build-system]
 requires = ["setuptools", "wheel"]

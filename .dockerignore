@@ -1,0 +1,16 @@
+# Ambientes virtuais e cache
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Git e variáveis de ambiente
+.git/
+.env
+
+# Pastas que a API não precisa para rodar
+frontend/
+tests/
+data/
+notebooks/
