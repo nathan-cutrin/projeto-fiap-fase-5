@@ -11,12 +11,28 @@ dependencies = [
     "joblib>=1.5.3",
     "streamlit>=1.54.0",
     "requests>=2.32.5",
+    "scikit-learn>=1.8.0",
 ]
 
 [dependency-groups]
 dev = [
     "taskipy>=1.14.1",
     "pytest>=8.0.0",
+    "scikit-learn>=1.8.0",
+    "openpyxl>=3.1.5",
+    "pytest-cov>=7.0.0",
+    "httpx>=0.28.1",
+]
+
+eda = [
+    "boruta>=0.4.3",
+    "matplotlib>=3.10.8",
+    "nbformat>=5.10.4",
+    "openpyxl>=3.1.5",
+    "pandas",
+    "plotly>=6.6.0",
+    "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
 ]
 
 [tool.taskipy.tasks]
@@ -24,7 +40,6 @@ lint = "ruff check ."
 test = "pytest"
 api = "uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
 front = "streamlit run frontend/app.py --server.port 8501"
-start-services = "start /b uv run task api & uv run task front"
 docker-build = "docker build -t passos-magicos-api ."
 docker-run = "docker run -p 8000:8000 passos-magicos-api"
 docker-test = "uv run task docker-build && uv run task docker-run"
