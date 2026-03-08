@@ -5,19 +5,25 @@ import os
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+# ✅ Página larga
+st.set_page_config(layout="wide")
+
 st.title("Classificação de Perfil do Aluno")
 st.write("Busque um aluno pelo RA para preencher automaticamente os indicadores, ou insira-os manualmente.")
 
 # --- Inicialização do estado ---
 for key in ["ind_desempenho", "ind_engajamento", "ind_psicossocial", "ind_autoavaliacao"]:
     if key not in st.session_state:
-        st.session_state[key] = 0.0  # ✅ começa com 0.0, não None
+        st.session_state[key] = 0.0
+    # Inicializa o input espelho também
+    if f"{key}_input" not in st.session_state:
+        st.session_state[f"{key}_input"] = 0.0
 
 if "aluno_info" not in st.session_state:
     st.session_state.aluno_info = None
 
 if "campos_ausentes_busca" not in st.session_state:
-    st.session_state.campos_ausentes_busca = []  # ✅ rastreia só os faltantes da busca
+    st.session_state.campos_ausentes_busca = []
 
 # --- Carrega stats dos clusters uma única vez por sessão ---
 @st.cache_data(ttl=3600)
@@ -89,10 +95,10 @@ with st.container(border=True):
                     ausentes = []
                     for key, campo_api in mapa_campos.items():
                         valor = dados_aluno.get(campo_api)
-                        if valor is not None:
-                            st.session_state[key] = float(valor)
-                        else:
-                            st.session_state[key] = 0.0  # ✅ 0.0 mas marcamos como ausente
+                        v = float(valor) if valor is not None else 0.0
+                        st.session_state[key] = v
+                        st.session_state[f"{key}_input"] = v  # ✅ sincroniza o input
+                        if valor is None:
                             ausentes.append(key)
 
                     st.session_state.campos_ausentes_busca = ausentes
@@ -119,23 +125,46 @@ st.subheader("📋 Indicadores do Aluno")
 st.caption("Preenchidos automaticamente ao buscar um aluno. Edite os campos que estiverem faltando.")
 
 def indicador_input(label, key, col):
-    ausente_na_busca = key in st.session_state.campos_ausentes_busca
+    slider_key = key
+    input_key  = f"{key}_input"
 
-    if ausente_na_busca:
+    # Callbacks de sincronização
+    def slider_mudou():
+        st.session_state[input_key] = st.session_state[slider_key]
+
+    def input_mudou():
+        st.session_state[slider_key] = st.session_state[input_key]
+
+    ausente = key in st.session_state.campos_ausentes_busca
+    if ausente:
         col.markdown(f"**{label}** 🔴 *não encontrado*")
     else:
         col.markdown(f"**{label}**")
 
-    return col.number_input(
+    num_col, slider_col = col.columns([1, 4])
+
+    slider_col.slider(
         label=label,
         min_value=0.0,
         max_value=10.0,
-        value=float(st.session_state[key]),  # ✅ sempre float, nunca None
-        step=1.0,
-        format="%.2f",
-        key=key,
+        step=0.01,
+        key=slider_key,
+        on_change=slider_mudou,
         label_visibility="collapsed",
     )
+
+    num_col.number_input(
+        label=label,
+        min_value=0.0,
+        max_value=10.0,
+        step=0.01,
+        format="%.2f",
+        key=input_key,
+        on_change=input_mudou,
+        label_visibility="collapsed",
+    )
+
+    return st.session_state[slider_key]
 
 col1, col2, col3, col4 = st.columns(4)
 
