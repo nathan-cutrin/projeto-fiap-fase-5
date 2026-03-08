@@ -6,9 +6,10 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-dev --without eda --no-cache
+RUN uv sync --frozen --no-dev --no-group eda --no-cache
 
 COPY api/ ./api/
+COPY src/models/ ./models/
 
 EXPOSE 8000
 

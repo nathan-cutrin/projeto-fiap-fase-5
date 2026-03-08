@@ -9,26 +9,24 @@ router = APIRouter()
 def predict_risk(student: StudentData):
     try:
         model = ml_models.get("passos_magicos_model")
+        scaler = ml_models.get("passos_magicos_scaler")
         
-        if not model:
-            raise ValueError()
+        if not model or not scaler:
+            raise ValueError("Modelo ou Scaler não estão carregados na memória.")
 
         input_data = pd.DataFrame([student.model_dump()])
         
-        prediction = model.predict(input_data)
-        probability = model.predict_proba(input_data)[0][1]
-
-        return PredictionResponse(
-            risco_predito=int(prediction[0]),
-            probabilidade=float(probability),
-            metodo="machine_learning"
-        )
-
-    except Exception:
-        risco_estimado = 1 if student.faltas > 15 else 0
+        input_scaled = scaler.transform(input_data)
         
+        # 4. Faz a predição (Descobre o Cluster)
+        prediction = model.predict(input_scaled)
+
         return PredictionResponse(
-            risco_predito=risco_estimado,
-            probabilidade=None,
-            metodo="heuristica_fallback"
+            classe_predita=int(prediction[0]), # Retornará 0, 1, 2 ou 3 (o Cluster)
+            metodo="machine_learning_kmeans"
+        )
+    except Exception as e:
+        return PredictionResponse(
+            classe_predita=-1, # Indica erro
+            metodo=f"Erro: {str(e)}"
         )

@@ -16,7 +16,7 @@ def avaliar_modelo(X_scaled, modelo_kmeans):
     score = silhouette_score(X_scaled, modelo_kmeans.labels_)
     inercia = modelo_kmeans.inertia_
     
-    print(f"--- AVALIAÇÃO DO MODELO K-MEANS ---")
+    print("--- AVALIAÇÃO DO MODELO K-MEANS ---")
     print(f"Silhouette Score: {score:.4f}")
     print(f"Inércia: {inercia:.2f}\n")
     return score

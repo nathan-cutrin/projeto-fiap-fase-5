@@ -1,31 +1,41 @@
 import joblib
-import os
+from pathlib import Path
 
-# Dicionário que vai guardar nossos artefatos em memória
 ml_models = {}
 
 def load_ml_artifacts():
     """
-    Carrega o modelo K-Means e o Scaler treinados na memória.
-    Os caminhos assumem que você roda a API a partir da raiz do projeto (projeto-5).
+    Carrega o modelo K-Means e o Scaler treinados na memória usando caminhos absolutos.
     """
-    model_path = "src/models/model.pkl"
-    scaler_path = "src/models/scaler.pkl"
+    # Descobre automaticamente onde este arquivo (model_services.py) está no computador
+    caminho_atual = Path(__file__).resolve()
+    
+    # Navega para trás até chegar na pasta 'src'
+    # caminho_atual = src/api/services/model_services.py
+    # .parent = services -> .parent = api -> .parent = src
+    pasta_src = caminho_atual.parent.parent.parent
+    
+    # Monta o caminho exato para a pasta models
+    model_path = pasta_src / "models" / "model.pkl"
+    scaler_path = pasta_src / "models" / "scaler.pkl"
+    
+    print(f"🔎 Procurando modelo em: {model_path}")
+    print(f"🔎 Procurando scaler em: {scaler_path}")
     
     try:
         # Carregando o modelo
-        if os.path.exists(model_path):
+        if model_path.exists():
             ml_models["passos_magicos_model"] = joblib.load(model_path)
+            print("✅ Modelo carregado com sucesso!")
         else:
-            print(f"Aviso: Modelo não encontrado em {model_path}")
+            print(f"❌ AVISO: model.pkl não encontrado!")
 
         # Carregando o scaler
-        if os.path.exists(scaler_path):
+        if scaler_path.exists():
             ml_models["passos_magicos_scaler"] = joblib.load(scaler_path)
+            print("✅ Scaler carregado com sucesso!")
         else:
-            print(f"Aviso: Scaler não encontrado em {scaler_path}")
+            print(f"❌ AVISO: scaler.pkl não encontrado!")
             
-        print("Artefatos de Machine Learning carregados com sucesso!")
-        
     except Exception as e:
-        print(f"Erro fatal ao carregar artefatos: {e}")
+        print(f"❌ Erro fatal ao carregar artefatos: {e}")

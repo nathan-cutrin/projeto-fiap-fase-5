@@ -1,10 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class StudentData(BaseModel):
-    faltas: int
+    dimensao_academica: float
+    dimensao_psicossocial: float
 
 class PredictionResponse(BaseModel):
-    risco_predito: int
-    probabilidade: Optional[float]
+    classe_predita: int
     metodo: str
