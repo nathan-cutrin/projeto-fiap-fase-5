@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas as pd
 import os
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
@@ -7,37 +8,94 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 st.title("Classificação de Perfil do Aluno")
 st.write("Busque um aluno pelo RA para preencher automaticamente os indicadores, ou insira-os manualmente.")
 
-if "acad_slider" not in st.session_state:
-    st.session_state["acad_slider"] = 5.0
-if "psico_slider" not in st.session_state:
-    st.session_state["psico_slider"] = 5.0
+# --- Inicialização do estado ---
+for key in ["ind_desempenho", "ind_engajamento", "ind_psicossocial", "ind_autoavaliacao"]:
+    if key not in st.session_state:
+        st.session_state[key] = 0.0  # ✅ começa com 0.0, não None
+
 if "aluno_info" not in st.session_state:
     st.session_state.aluno_info = None
 
+if "campos_ausentes_busca" not in st.session_state:
+    st.session_state.campos_ausentes_busca = []  # ✅ rastreia só os faltantes da busca
+
+# --- Carrega stats dos clusters uma única vez por sessão ---
+@st.cache_data(ttl=3600)
+def carregar_stats_clusters():
+    try:
+        resp = requests.get(f"{API_URL}/clusters/stats")
+        if resp.status_code == 200:
+            return {int(k): v for k, v in resp.json().items()}
+    except Exception:
+        pass
+    return {}
+
+def exibir_stats_cluster(cluster_id: int, stats_clusters: dict):
+    stats = stats_clusters.get(cluster_id)
+    if not stats:
+        st.warning("Estatísticas do cluster não disponíveis.")
+        return
+
+    n = stats.get("n_alunos", "?")
+    st.markdown(f"#### 📊 Comparativo com o Cluster {cluster_id} — {n} alunos na base")
+
+    colunas_labels = {
+        "indicador_desempenho_academico": "Desemp. Acadêmico",
+        "indicador_engajamento":          "Engajamento",
+        "indicador_psicossocial":         "Psicossocial",
+        "indicador_autoavaliacao":        "Autoavaliação",
+        "dimensao_academica":             "Dim. Acadêmica",
+        "dimensao_psicossocial":          "Dim. Psicossocial",
+    }
+
+    rows = []
+    for col_key, label in colunas_labels.items():
+        if col_key in stats:
+            s = stats[col_key]
+            rows.append({
+                "Indicador": label,
+                "Média":     s["mean"],
+                "Mediana":   s["median"],
+                "Mín":       s["min"],
+                "Máx":       s["max"],
+            })
+
+    df_stats = pd.DataFrame(rows).set_index("Indicador")
+    st.dataframe(df_stats, use_container_width=True)
+
+# --- Busca por RA ---
 with st.container(border=True):
     st.subheader("🔍 Buscar Aluno (Base 2024)")
     busca_ra = st.text_input("Digite o RA do Aluno (somente números, ex: 904)")
-    
+
     if st.button("Buscar Aluno"):
         if not busca_ra.strip():
             st.warning("Por favor, digite um número de RA válido.")
         else:
             try:
-                ra_limpo = busca_ra.strip()
-                resp_busca = requests.get(f"{API_URL}/student/{ra_limpo}")
-                
+                resp_busca = requests.get(f"{API_URL}/student/{busca_ra.strip()}")
+
                 if resp_busca.status_code == 200:
                     dados_aluno = resp_busca.json()
-                    
-                    st.session_state["acad_slider"] = float(dados_aluno["dimensao_academica"])
-                    st.session_state["psico_slider"] = float(dados_aluno["dimensao_psicossocial"])
-                    
                     st.session_state.aluno_info = dados_aluno
-                    st.success(f"Aluno com RA {dados_aluno['ra']} encontrado!")
-                    st.rerun()
-                    
-                    st.session_state.aluno_info = dados_aluno
-                    
+
+                    mapa_campos = {
+                        "ind_desempenho":    "indicador_desempenho_academico",
+                        "ind_engajamento":   "indicador_engajamento",
+                        "ind_psicossocial":  "indicador_psicossocial",
+                        "ind_autoavaliacao": "indicador_autoavaliacao",
+                    }
+
+                    ausentes = []
+                    for key, campo_api in mapa_campos.items():
+                        valor = dados_aluno.get(campo_api)
+                        if valor is not None:
+                            st.session_state[key] = float(valor)
+                        else:
+                            st.session_state[key] = 0.0  # ✅ 0.0 mas marcamos como ausente
+                            ausentes.append(key)
+
+                    st.session_state.campos_ausentes_busca = ausentes
                     st.success(f"Aluno com RA {dados_aluno['ra']} encontrado!")
                     st.rerun()
                 else:
@@ -45,76 +103,100 @@ with st.container(border=True):
             except Exception as e:
                 st.error(f"Erro de conexão: {e}")
 
+# --- Detalhes do aluno encontrado ---
 if st.session_state.aluno_info:
     info = st.session_state.aluno_info
-    with st.expander("ℹ️ Detalhes e Indicadores Brutos do Aluno", expanded=True):
-        
-        # Dados Demográficos
-        col_demo1, col_demo2 = st.columns(2)
-        col_demo1.markdown(f"**Fase:** {info.get('fase')}")
+    with st.expander("ℹ️ Dados do Aluno", expanded=True):
+        col1, col2 = st.columns(2)
+        col1.markdown(f"**Fase:** {info.get('fase')}")
         idade_str = int(info.get('idade')) if info.get('idade') is not None else "N/A"
-        col_demo2.markdown(f"**Idade:** {idade_str}")
-        
-        st.divider()
-        
-        st.markdown("##### Indicadores Originais")
-        ind1, ind2, ind3, ind4 = st.columns(4)
-        ind1.metric("Desemp. Acad.", info.get('indicador_desempenho_academico'))
-        ind2.metric("Engajamento", info.get('indicador_engajamento'))
-        ind3.metric("Psicossocial", info.get('indicador_psicossocial'))
-        ind4.metric("Autoavaliação", info.get('indicador_autoavaliacao'))
+        col2.markdown(f"**Idade:** {idade_str}")
 
 st.divider()
-st.subheader("📊 Dimensões de Agrupamento (Input do Modelo)")
-st.caption("Estas dimensões são alimentadas automaticamente ao buscar um aluno. Você também pode ajustá-las para simular cenários.")
 
-col1, col2 = st.columns(2)
+# --- Inputs dos 4 indicadores ---
+st.subheader("📋 Indicadores do Aluno")
+st.caption("Preenchidos automaticamente ao buscar um aluno. Edite os campos que estiverem faltando.")
 
-with col1:
-    dim_acad = st.slider(
-        "Dimensão Acadêmica", 
-        0.0, 10.0, 
-        key="acad_slider", 
-        step=0.1
+def indicador_input(label, key, col):
+    ausente_na_busca = key in st.session_state.campos_ausentes_busca
+
+    if ausente_na_busca:
+        col.markdown(f"**{label}** 🔴 *não encontrado*")
+    else:
+        col.markdown(f"**{label}**")
+
+    return col.number_input(
+        label=label,
+        min_value=0.0,
+        max_value=10.0,
+        value=float(st.session_state[key]),  # ✅ sempre float, nunca None
+        step=1.0,
+        format="%.2f",
+        key=key,
+        label_visibility="collapsed",
     )
 
-with col2:
-    dim_psico = st.slider(
-        "Dimensão Psicossocial", 
-        0.0, 10.0, 
-        key="psico_slider", #
-        step=0.1
-    )
+col1, col2, col3, col4 = st.columns(4)
 
+ind_desempenho    = indicador_input("🎓 Desemp. Acadêmico", "ind_desempenho",    col1)
+ind_engajamento   = indicador_input("💡 Engajamento",        "ind_engajamento",   col2)
+ind_psicossocial  = indicador_input("🧠 Psicossocial",       "ind_psicossocial",  col3)
+ind_autoavaliacao = indicador_input("🪞 Autoavaliação",      "ind_autoavaliacao", col4)
+
+# --- Cálculo interno das dimensões ---
+dim_academica    = round((ind_desempenho  + ind_engajamento)  / 2, 4)
+dim_psicossocial = round((ind_psicossocial + ind_autoavaliacao) / 2, 4)
+
+# --- Preview das dimensões calculadas ---
+with st.container(border=True):
+    st.caption("📐 Dimensões calculadas automaticamente (input do modelo)")
+    c1, c2 = st.columns(2)
+    c1.metric("Dimensão Acadêmica",    f"{dim_academica:.2f}",    help="Média entre Desempenho Acadêmico e Engajamento")
+    c2.metric("Dimensão Psicossocial", f"{dim_psicossocial:.2f}", help="Média entre Psicossocial e Autoavaliação")
+
+st.divider()
+
+# --- Aviso de campos faltando (só aparece após busca com dados incompletos) ---
+if st.session_state.campos_ausentes_busca:
+    st.warning(f"⚠️ {len(st.session_state.campos_ausentes_busca)} indicador(es) não encontrado(s) para este aluno. Ajuste os campos 🔴 antes de analisar.")
+
+# --- Botão de análise ---
 if st.button("Analisar Perfil", type="primary"):
     payload = {
-        "dimensao_academica": dim_acad,
-        "dimensao_psicossocial": dim_psico
+        "dimensao_academica":    dim_academica,
+        "dimensao_psicossocial": dim_psicossocial,
     }
-    
+
     try:
         resposta = requests.post(f"{API_URL}/predict", json=payload)
-        
+
         if resposta.status_code == 200:
             resultado = resposta.json()
-            
-            cluster = resultado.get("classe_predita")
-            metodo = resultado.get("metodo")
-            
-            st.success("Análise de Cluster concluída!")
-            
+
+            cluster      = resultado.get("classe_predita")
+            metodo       = resultado.get("metodo")
             persona_nome = resultado.get("persona_nome")
             persona_desc = resultado.get("persona_descricao")
+
+            st.success("Análise de Cluster concluída!")
+
             if persona_nome:
                 st.markdown(f"### 🎯 Perfil Identificado: **{persona_nome}**")
                 st.info(persona_desc)
-            
+
             col_a, col_b = st.columns(2)
             col_a.metric(label="Grupo Matemático", value=f"Cluster {cluster}")
             col_b.caption(f"Processado via: {metodo}")
-            
+
+            st.divider()
+
+            # --- Estatísticas do cluster ---
+            stats_clusters = carregar_stats_clusters()
+            exibir_stats_cluster(cluster, stats_clusters)
+
         else:
             st.error(f"Erro na API: {resposta.status_code} - {resposta.text}")
-            
+
     except Exception as e:
         st.error(f"Falha de conexão com a API: {e}")
