@@ -1,41 +1,36 @@
 import joblib
+import pandas as pd
 from pathlib import Path
 
-ml_models = {}
+ml_models = {
+    "passos_magicos_model": None,
+    "passos_magicos_scaler": None,
+    "student_database": None
+}
 
 def load_ml_artifacts():
-    """
-    Carrega o modelo K-Means e o Scaler treinados na memória usando caminhos absolutos.
-    """
-    # Descobre automaticamente onde este arquivo (model_services.py) está no computador
     caminho_atual = Path(__file__).resolve()
+    pasta_api = caminho_atual.parent.parent 
     
-    # Navega para trás até chegar na pasta 'src'
-    # caminho_atual = src/api/services/model_services.py
-    # .parent = services -> .parent = api -> .parent = src
-    pasta_src = caminho_atual.parent.parent.parent
-    
-    # Monta o caminho exato para a pasta models
-    model_path = pasta_src / "models" / "model.pkl"
-    scaler_path = pasta_src / "models" / "scaler.pkl"
-    
-    print(f"🔎 Procurando modelo em: {model_path}")
-    print(f"🔎 Procurando scaler em: {scaler_path}")
-    
+    model_path = pasta_api.parent / "models" / "model.pkl"
+    scaler_path = pasta_api.parent / "models" / "scaler.pkl"
+    db_path = pasta_api / "database" / "alunos_db.csv"
+
     try:
-        # Carregando o modelo
         if model_path.exists():
             ml_models["passos_magicos_model"] = joblib.load(model_path)
-            print("✅ Modelo carregado com sucesso!")
-        else:
-            print(f"❌ AVISO: model.pkl não encontrado!")
-
-        # Carregando o scaler
         if scaler_path.exists():
             ml_models["passos_magicos_scaler"] = joblib.load(scaler_path)
-            print("✅ Scaler carregado com sucesso!")
-        else:
-            print(f"❌ AVISO: scaler.pkl não encontrado!")
+
+        if db_path.exists():
+            df_temp = pd.read_csv(db_path)
+            df_limpo = df_temp.where(pd.notnull(df_temp), None)
+            
+            # Como o dado já está limpo (só os números), só garantimos que a API leia como texto
+            df_limpo['ra'] = df_limpo['ra'].astype(str).str.strip()
+            
+            ml_models["student_database"] = df_limpo
+            print(f"✅ Banco de dados carregado: {len(df_limpo)} alunos prontos.")
             
     except Exception as e:
-        print(f"❌ Erro fatal ao carregar artefatos: {e}")
+        print(f"❌ Erro ao carregar artefatos: {e}")

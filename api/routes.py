@@ -1,9 +1,23 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 import pandas as pd
-from api.schemas import StudentData, PredictionResponse
+from api.schemas import StudentData, PredictionResponse, StudentResponse
 from api.services.model_services import ml_models
 
 router = APIRouter()
+
+@router.get("/student/{ra_numero}", response_model=StudentResponse)
+def get_student_by_ra(ra_numero: str):
+    db = ml_models.get("student_database")
+    if db is None:
+        raise HTTPException(status_code=500, detail="Banco de dados não carregado.")
+
+    ra_busca = ra_numero.strip()
+    filtro = db[db['ra'] == ra_busca]
+    
+    if filtro.empty:
+        raise HTTPException(status_code=404, detail=f"Aluno com RA {ra_busca} não encontrado.")
+    
+    return StudentResponse(**filtro.iloc[0].to_dict())
 
 @router.post("/predict", response_model=PredictionResponse)
 def predict_risk(student: StudentData):
