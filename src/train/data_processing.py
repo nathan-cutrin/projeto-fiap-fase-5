@@ -2,8 +2,6 @@ import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 
-import pandas as pd
-from pathlib import Path
 
 def carregar_dados():
     """

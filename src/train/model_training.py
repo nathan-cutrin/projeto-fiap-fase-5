@@ -1,23 +1,22 @@
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-def treinar_modelo(X_scaled):
+def treinar_modelo(X_scaled, k=4):
     """
-    Função para treinar o modelo de clusterização hierárquica.
+    Treina o modelo K-Means e retorna o modelo ajustado.
     """
-    modelo_hc = AgglomerativeClustering(n_clusters=4, metric='cosine', linkage='average')
-    modelo_hc.fit(X_scaled)
-    
-    # Avaliação do modelo (Silhouette Score)
-    score = silhouette_score(X_scaled, modelo_hc.labels_)
-    print(f"Silhouette Score: {score}")
-    
-    return modelo_hc, score
+    modelo_kmeans = KMeans(n_clusters=k, random_state=42, n_init='auto')
+    modelo_kmeans.fit(X_scaled)
+    return modelo_kmeans
 
-def avaliar_modelo(X_scaled, modelo_hc):
+def avaliar_modelo(X_scaled, modelo_kmeans):
     """
-    Função para avaliar a qualidade do modelo usando uma métrica.
+    Avalia a qualidade do modelo usando Silhouette Score e Inércia.
     """
-    score = silhouette_score(X_scaled, modelo_hc.labels_)
-    print(f"Silhouette Score: {score}")
+    score = silhouette_score(X_scaled, modelo_kmeans.labels_)
+    inercia = modelo_kmeans.inertia_
+    
+    print(f"--- AVALIAÇÃO DO MODELO K-MEANS ---")
+    print(f"Silhouette Score: {score:.4f}")
+    print(f"Inércia: {inercia:.2f}\n")
     return score

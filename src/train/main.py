@@ -13,7 +13,7 @@ df_2024 = preparar_dados(df_2022, df_2023, df_2024)
 X_scaled, scaler = padronizar_dados(df_2024)
 
 # Treinar o modelo
-modelo_hc, score = treinar_modelo(X_scaled)
+modelo = treinar_modelo(X_scaled)
 
 # Salvar o modelo e o scaler
-salvar_modelo(modelo_hc, scaler, modelo_path, scaler_path)
+salvar_modelo(modelo, scaler, modelo_path, scaler_path)
