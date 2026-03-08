@@ -9,8 +9,8 @@ ml_models = {
 }
 
 def load_ml_artifacts():
-    caminho_atual = Path(__file__).resolve()
-    pasta_api = caminho_atual.parent.parent 
+    workdir = Path(__file__).resolve()
+    pasta_api = workdir.parent.parent 
     
     model_path = pasta_api.parent / "models" / "model.pkl"
     scaler_path = pasta_api.parent / "models" / "scaler.pkl"
@@ -26,7 +26,6 @@ def load_ml_artifacts():
             df_temp = pd.read_csv(db_path)
             df_limpo = df_temp.where(pd.notnull(df_temp), None)
             
-            # Como o dado já está limpo (só os números), só garantimos que a API leia como texto
             df_limpo['ra'] = df_limpo['ra'].astype(str).str.strip()
             
             ml_models["student_database"] = df_limpo

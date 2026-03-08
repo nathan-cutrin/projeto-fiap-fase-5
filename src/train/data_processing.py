@@ -13,7 +13,6 @@ def carregar_dados():
     # Caminho para acessar o arquivo Excel em 'data/raw'
     file_path = current_directory / 'data' / 'raw' / 'base_dados_passos_magicos.xlsx'
 
-    # Carregar os dados de todas as abas do Excel
     try:
         dicionario_abas = pd.read_excel(file_path, sheet_name=None)
         print(f"Arquivo carregado com sucesso! Caminho: {file_path}")

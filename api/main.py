@@ -8,7 +8,7 @@ async def lifespan(app: FastAPI):
     try:
         load_ml_artifacts()
     except Exception as e:
-        print(f"Aviso no Startup: Artefatos de ML não carregados. Fallback ativado. Erro: {e}")
+        print(f"Artefatos de ML não carregados. Fallback ativado. Erro: {e}")
         pass
         
     yield 

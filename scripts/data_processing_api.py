@@ -40,7 +40,6 @@ def padronizar_fase(valor):
     
     if match:
         numero = int(match.group())
-        # Opcional: Algumas ONGs chamam a Fase 0 de Alfa. Se quiser mantê-las separadas, deixamos Fase 0.
         if numero == 0:
             return 'Fase Alfa'
         return f'Fase {numero}'

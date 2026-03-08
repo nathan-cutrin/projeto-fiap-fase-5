@@ -32,15 +32,14 @@ def predict_risk(student: StudentData):
         
         input_scaled = scaler.transform(input_data)
         
-        # 4. Faz a predição (Descobre o Cluster)
         prediction = model.predict(input_scaled)
 
         return PredictionResponse(
-            classe_predita=int(prediction[0]), # Retornará 0, 1, 2 ou 3 (o Cluster)
+            classe_predita=int(prediction[0]) + 1, # Ajuste para que as classes sejam 1, 2, 3 em vez de 0, 1, 2
             metodo="machine_learning_kmeans"
         )
     except Exception as e:
         return PredictionResponse(
-            classe_predita=-1, # Indica erro
+            classe_predita=-1,
             metodo=f"Erro: {str(e)}"
         )
