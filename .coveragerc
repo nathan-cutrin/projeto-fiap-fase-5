@@ -1,0 +1,12 @@
+[run]
+omit =
+    */venv/*
+    */.venv/*
+    */site-packages/*
+    frontend/app.py
+    */__init__.py
+    */conftest.py
+
+[report]
+exclude_lines =
+    if __name__ == "__main__":

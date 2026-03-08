@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import os
+from utils import converter_stats, montar_rows_stats
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
@@ -31,7 +32,7 @@ def carregar_stats_clusters():
     try:
         resp = requests.get(f"{API_URL}/clusters/stats")
         if resp.status_code == 200:
-            return {int(k): v for k, v in resp.json().items()}
+            return converter_stats(resp.json())  # ✅ usa a função do utils
     except Exception:
         pass
     return {}
@@ -45,27 +46,7 @@ def exibir_stats_cluster(cluster_id: int, stats_clusters: dict):
     n = stats.get("n_alunos", "?")
     st.markdown(f"#### 📊 Comparativo com o Cluster {cluster_id} — {n} alunos na base")
 
-    colunas_labels = {
-        "indicador_desempenho_academico": "Desemp. Acadêmico",
-        "indicador_engajamento":          "Engajamento",
-        "indicador_psicossocial":         "Psicossocial",
-        "indicador_autoavaliacao":        "Autoavaliação",
-        "dimensao_academica":             "Dim. Acadêmica",
-        "dimensao_psicossocial":          "Dim. Psicossocial",
-    }
-
-    rows = []
-    for col_key, label in colunas_labels.items():
-        if col_key in stats:
-            s = stats[col_key]
-            rows.append({
-                "Indicador": label,
-                "Média":     s["mean"],
-                "Mediana":   s["median"],
-                "Mín":       s["min"],
-                "Máx":       s["max"],
-            })
-
+    rows = montar_rows_stats(stats)  # ✅ usa a função do utils
     df_stats = pd.DataFrame(rows).set_index("Indicador")
     st.dataframe(df_stats, use_container_width=True)
 

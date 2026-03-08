@@ -6,6 +6,10 @@ from api.services.model_services import ml_models
 router = APIRouter()
 _stats_cache = None
 
+def _reset_cache():
+    global _stats_cache
+    _stats_cache = None
+
 @router.get("/student/{ra_numero}", response_model=StudentResponse)
 def get_student_by_ra(ra_numero: str):
     db = ml_models.get("student_database")
