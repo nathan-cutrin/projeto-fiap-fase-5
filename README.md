@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/nathan-cutrin/projeto-fiap-fase-5/branch/main/graph/badge.svg)](https://codecov.io/gh/SEU_USUARIO/SEU_REPO)
+
 # 🎓 Passos Mágicos 
 
 > Datathon FIAP Pós Tech — Machine Learning Engineering (Fase 5)
