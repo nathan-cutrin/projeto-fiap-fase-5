@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from utils import converter_stats, montar_rows_stats
 from monitoring import render as render_monitoring
+from clusters import render as render_clusters
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
@@ -11,7 +12,11 @@ st.set_page_config(layout="wide")
 
 st.title("Classificação de Perfil do Aluno")
 
-aba1, aba2 = st.tabs(["🎓 Classificar Aluno", "📡 Monitoramento de Drift"])
+aba1, aba2, aba3 = st.tabs([
+    "🎓 Classificar Aluno",
+    "🗂️ Clusters",
+    "📡 Monitoramento de Drift"
+])
 
 # ─────────────────────────────────────────────
 # ABA 1 — Classificação
@@ -216,10 +221,16 @@ with aba1:
         except Exception as e:
             st.error(f"Falha de conexão com a API: {e}")
 
-
 # ─────────────────────────────────────────────
-# ABA 2 — Monitoramento de Drift
+# ABA 3 — Classificação dos Clusters
 # ─────────────────────────────────────────────
 
 with aba2:
+    render_clusters()
+
+# ─────────────────────────────────────────────
+# ABA 3 — Monitoramento de Drift
+# ─────────────────────────────────────────────
+
+with aba3:
     render_monitoring()
