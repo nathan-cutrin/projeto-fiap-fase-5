@@ -12,6 +12,8 @@ dependencies = [
     "streamlit>=1.54.0",
     "requests>=2.32.5",
     "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "plotly>=6.6.0",
 ]
 
 [dependency-groups]
