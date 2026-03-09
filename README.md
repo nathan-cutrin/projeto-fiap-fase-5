@@ -1,4 +1,4 @@
-# 🎓 Passos Mágicos — Predição de Risco de Defasagem Escolar
+# 🎓 Passos Mágicos 
 
 > Datathon FIAP Pós Tech — Machine Learning Engineering (Fase 5)
 
